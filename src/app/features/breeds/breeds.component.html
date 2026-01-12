@@ -1,0 +1,125 @@
+<div class="breeds-container">
+  <h1>Razas de Gatos</h1>
+
+  <!-- Breed Selector -->
+  <mat-card class="selector-card">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Selecciona una raza</mat-label>
+        <mat-select [formControl]="selectedBreedControl">
+          @for (breed of breeds(); track breed.id) {
+            <mat-option [value]="breed.id">{{ breed.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Selected Breed Details -->
+  @if (selectedBreed()) {
+    <div class="breed-details">
+      <!-- Image Carousel -->
+      <mat-card class="carousel-card">
+        <mat-card-header>
+          <mat-card-title>Imágenes de {{ selectedBreed()?.name }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (loadingImages()) {
+            <div class="loading-container">
+              <mat-spinner></mat-spinner>
+            </div>
+          } @else if (breedImages().length > 0) {
+            <div class="carousel">
+              <button class="carousel-btn prev" (click)="previousImage()" [disabled]="breedImages().length <= 1">‹</button>
+              <img [src]="breedImages()[currentImageIndex()].url" [alt]="selectedBreed()?.name" class="carousel-image">
+              <button class="carousel-btn next" (click)="nextImage()" [disabled]="breedImages().length <= 1">›</button>
+            </div>
+            <div class="carousel-indicators">
+              {{ currentImageIndex() + 1 }} / {{ breedImages().length }}
+            </div>
+          } @else {
+            <p>No hay imágenes disponibles para esta raza.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Breed Information Card -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title>{{ selectedBreed()?.name }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="info-grid">
+            @if (selectedBreed()?.origin) {
+              <div class="info-item">
+                <strong>Origen:</strong> {{ selectedBreed()?.origin }}
+              </div>
+            }
+            @if (selectedBreed()?.temperament) {
+              <div class="info-item">
+                <strong>Temperamento:</strong> {{ selectedBreed()?.temperament }}
+              </div>
+            }
+            @if (selectedBreed()?.life_span) {
+              <div class="info-item">
+                <strong>Esperanza de vida:</strong> {{ selectedBreed()?.life_span }} años
+              </div>
+            }
+            @if (selectedBreed()?.weight) {
+              <div class="info-item">
+                <strong>Peso:</strong> {{ selectedBreed()?.weight?.metric }} kg
+              </div>
+            }
+            @if (selectedBreed()?.description) {
+              <div class="info-item full-width">
+                <strong>Descripción:</strong>
+                <p>{{ selectedBreed()?.description }}</p>
+              </div>
+            }
+            @if (selectedBreed()?.wikipedia_url) {
+              <div class="info-item full-width">
+                <a [href]="selectedBreed()?.wikipedia_url" target="_blank">Ver en Wikipedia →</a>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- All Breeds Table -->
+  <mat-card class="table-card">
+    <mat-card-header>
+      <mat-card-title>Todas las Razas</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loadingBreeds()) {
+        <div class="loading-container">
+          <mat-spinner></mat-spinner>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table mat-table [dataSource]="breeds()" class="breeds-table">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let breed">{{ breed.name }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="origin">
+              <th mat-header-cell *matHeaderCellDef>Origen</th>
+              <td mat-cell *matCellDef="let breed">{{ breed.origin || 'N/A' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="temperament">
+              <th mat-header-cell *matHeaderCellDef>Temperamento</th>
+              <td mat-cell *matCellDef="let breed">{{ breed.temperament || 'N/A' }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selectBreedFromTable(row)" class="clickable-row"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

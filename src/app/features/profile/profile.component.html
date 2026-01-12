@@ -1,0 +1,65 @@
+<div class="profile-container">
+  <h1>Perfil de Usuario</h1>
+
+  <mat-card class="profile-card">
+    <mat-card-header>
+      <div class="profile-avatar">
+        <mat-icon>account_circle</mat-icon>
+      </div>
+      <mat-card-title>{{ user()?.name }}</mat-card-title>
+      <mat-card-subtitle>{{ user()?.email }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-divider></mat-divider>
+
+    <mat-card-content>
+      <div class="user-info">
+        <h3>Información de la cuenta</h3>
+
+        <div class="info-row">
+          <span class="info-label">
+            <mat-icon>person</mat-icon>
+            Nombre:
+          </span>
+          <span class="info-value">{{ user()?.name }}</span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">
+            <mat-icon>email</mat-icon>
+            Email:
+          </span>
+          <span class="info-value">{{ user()?.email }}</span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">
+            <mat-icon>vpn_key</mat-icon>
+            ID de usuario:
+          </span>
+          <span class="info-value">{{ user()?.id }}</span>
+        </div>
+      </div>
+    </mat-card-content>
+
+    <mat-divider></mat-divider>
+
+    <mat-card-actions>
+      <button mat-raised-button color="warn" (click)="onLogout()">
+        <mat-icon>logout</mat-icon>
+        Cerrar Sesión
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Additional Info Card -->
+  <mat-card class="info-card">
+    <mat-card-header>
+      <mat-card-title>Información</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p>Esta es tu vista de perfil protegida. Solo los usuarios autenticados pueden acceder a esta página.</p>
+      <p>Desde aquí puedes ver tu información de usuario y cerrar sesión cuando lo desees.</p>
+    </mat-card-content>
+  </mat-card>
+</div>

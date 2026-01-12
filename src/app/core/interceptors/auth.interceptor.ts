@@ -1,0 +1,24 @@
+import { HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { AuthService } from '@core/services/auth.service';
+
+/**
+ * HTTP Interceptor to add authentication token to requests
+ * Follows functional interceptor pattern in Angular 20+
+ */
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(AuthService);
+  const token = authService.getToken();
+
+  // Clone request and add authorization header if token exists
+  if (token) {
+    const clonedRequest = req.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return next(clonedRequest);
+  }
+
+  return next(req);
+};

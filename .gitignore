@@ -42,7 +42,7 @@ testem.log
 Thumbs.db
 
 # Clauder files
-.clauder
+.claude
 CLAUDE.md
 DOCKER.md
-.claude
+/.claude

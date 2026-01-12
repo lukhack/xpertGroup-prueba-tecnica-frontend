@@ -135,6 +135,257 @@ ng e2e
 
 Angular CLI no incluye un framework de testing end-to-end por defecto. Puedes elegir uno que se adapte a tus necesidades.
 
+## Despliegue con Docker
+
+### Prerrequisitos
+
+- [Docker](https://www.docker.com/get-started) instalado (versión 20.10 o superior)
+- [Docker Compose](https://docs.docker.com/compose/install/) instalado (versión 2.0 o superior)
+
+### Arquitectura del Contenedor
+
+El proyecto utiliza una estrategia de **multi-stage build** para optimizar el tamaño de la imagen final:
+
+1. **Etapa de Build** (`node:20-alpine`):
+   - Instala las dependencias de Node.js
+   - Compila la aplicación Angular para producción
+   - Optimiza y minimiza los assets
+
+2. **Etapa de Producción** (`nginx:1.25-alpine`):
+   - Servidor web Nginx ligero
+   - Solo contiene los archivos estáticos compilados
+   - Configuración optimizada para aplicaciones SPA
+   - Imagen final ~50MB (vs ~1GB con Node.js)
+
+### Configuración
+
+El proyecto incluye dos archivos principales para Docker:
+
+- **`Dockerfile`**: Define la construcción de la imagen multi-stage
+- **`docker-compose.yml`**: Orquesta el despliegue del contenedor
+- **`nginx.conf`**: Configuración personalizada de Nginx para Angular
+
+### Construcción y Ejecución
+
+#### Opción 1: Usando Docker Compose (Recomendado)
+
+```bash
+# Construir y levantar el contenedor en segundo plano
+docker-compose up -d --build
+
+# Ver los logs del contenedor
+docker-compose logs -f frontend
+
+# Verificar el estado del contenedor
+docker-compose ps
+
+# Detener el contenedor
+docker-compose down
+
+# Detener y eliminar volúmenes
+docker-compose down -v
+```
+
+#### Opción 2: Usando Docker directamente
+
+```bash
+# Construir la imagen
+docker build -t cat-breeds-frontend .
+
+# Ejecutar el contenedor
+docker run -d -p 4200:80 --name cat-breeds-frontend cat-breeds-frontend
+
+# Ver logs
+docker logs -f cat-breeds-frontend
+
+# Detener y eliminar el contenedor
+docker stop cat-breeds-frontend
+docker rm cat-breeds-frontend
+```
+
+### Acceso a la Aplicación
+
+Una vez que el contenedor esté en ejecución, la aplicación estará disponible en:
+
+```
+http://localhost:4200
+```
+
+### Configuración Avanzada
+
+#### Variables de Entorno
+
+Puedes personalizar el comportamiento del contenedor modificando el archivo `docker-compose.yml`:
+
+```yaml
+environment:
+  - NODE_ENV=production
+  - API_URL=http://api.ejemplo.com  # URL del backend
+```
+
+#### Puerto Personalizado
+
+Para cambiar el puerto expuesto, modifica el mapeo en `docker-compose.yml`:
+
+```yaml
+ports:
+  - "8080:80"  # Ahora accesible en http://localhost:8080
+```
+
+#### Integración con Backend
+
+Para conectar el frontend con el backend en Docker, añade el backend al mismo archivo `docker-compose.yml`:
+
+```yaml
+services:
+  frontend:
+    # ... configuración del frontend
+    depends_on:
+      - backend
+    networks:
+      - cat-breeds-network
+
+  backend:
+    image: cat-breeds-backend:latest
+    container_name: cat-breeds-backend
+    ports:
+      - "3000:3000"
+    networks:
+      - cat-breeds-network
+
+networks:
+  cat-breeds-network:
+    driver: bridge
+```
+
+### Healthcheck
+
+El contenedor incluye un healthcheck automático que verifica cada 30 segundos si Nginx está respondiendo:
+
+```bash
+# Ver el estado de salud del contenedor
+docker inspect --format='{{.State.Health.Status}}' cat-breeds-frontend
+```
+
+Estados posibles:
+- `starting`: El contenedor acaba de iniciar
+- `healthy`: El contenedor está funcionando correctamente
+- `unhealthy`: El healthcheck ha fallado
+
+### Solución de Problemas
+
+#### El contenedor no inicia
+
+```bash
+# Ver logs detallados
+docker-compose logs frontend
+
+# Verificar la configuración
+docker-compose config
+```
+
+#### Error de puerto en uso
+
+```bash
+# En Windows (PowerShell)
+netstat -ano | findstr :4200
+taskkill /PID <PID> /F
+
+# En Linux/Mac
+lsof -ti:4200 | xargs kill -9
+```
+
+#### Reconstruir desde cero
+
+```bash
+# Eliminar contenedores, imágenes y cache
+docker-compose down
+docker system prune -a
+docker-compose up -d --build --force-recreate
+```
+
+#### Acceder al contenedor
+
+```bash
+# Abrir shell dentro del contenedor
+docker exec -it cat-breeds-frontend sh
+
+# Ver archivos servidos por Nginx
+ls -la /usr/share/nginx/html
+
+# Ver configuración de Nginx
+cat /etc/nginx/nginx.conf
+```
+
+### Producción
+
+#### Optimizaciones Recomendadas
+
+1. **Usar Registry Privado**: Sube la imagen a un registry privado (Docker Hub, AWS ECR, etc.)
+
+```bash
+# Tag de la imagen
+docker tag cat-breeds-frontend:latest tu-registry.com/cat-breeds-frontend:v1.0.0
+
+# Push al registry
+docker push tu-registry.com/cat-breeds-frontend:v1.0.0
+```
+
+2. **HTTPS con Certificados SSL**: Configura Nginx con certificados SSL/TLS
+
+3. **Variables de Entorno**: Usa archivos `.env` para gestionar configuraciones sensibles
+
+```bash
+# Crear archivo .env
+echo "API_URL=https://api.produccion.com" > .env
+
+# Docker Compose automáticamente cargará las variables
+docker-compose up -d
+```
+
+4. **Actualización sin Downtime**: Usa estrategias rolling update
+
+```bash
+# Actualizar sin detener el servicio
+docker-compose up -d --no-deps --build frontend
+```
+
+#### Monitoreo
+
+```bash
+# Ver uso de recursos
+docker stats cat-breeds-frontend
+
+# Inspeccionar el contenedor
+docker inspect cat-breeds-frontend
+
+# Ver procesos en ejecución
+docker top cat-breeds-frontend
+```
+
+### Seguridad
+
+El Dockerfile implementa varias prácticas de seguridad:
+
+- **Usuario no-root**: Nginx corre con usuario limitado
+- **Imagen Alpine**: Base mínima que reduce superficie de ataque
+- **Multi-stage build**: Solo incluye artefactos necesarios en producción
+- **Healthcheck**: Detección temprana de problemas
+- **Sin secrets en imagen**: Credenciales se pasan vía variables de entorno
+
+### Limpieza
+
+```bash
+# Detener y eliminar el contenedor
+docker-compose down
+
+# Eliminar también la imagen
+docker-compose down --rmi all
+
+# Limpiar todo el sistema Docker (¡cuidado!)
+docker system prune -a --volumes
+```
+
 ## Recursos Adicionales
 
 Para más información sobre el uso de Angular CLI, incluyendo referencias detalladas de comandos, visita la página [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli).

@@ -32,9 +32,8 @@ Thumbs.db
 .gitattributes
 
 # Documentation
-README.md
-CLAUDE.md
 *.md
+.claude/
 
 # Docker
 Dockerfile
@@ -53,3 +52,4 @@ logs
 # Misc
 .editorconfig
 .browserslistrc
+
